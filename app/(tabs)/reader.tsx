@@ -21,37 +21,6 @@ import * as ImagePicker from 'expo-image-picker';
 import { useComicReader } from '@/hooks/useComicReader';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// ─── FUNGSI PEMBENTUK TEKS UNTUK SPEECH ────────────────────────────────────────
-
-const formatTextForSpeech = (text: string): string => {
-  if (!text) return text;
-
-  let processed = text;
-
-  // 1. Ganti "KAPITAL" (tepat sebagai kata) menjadi "kapital"
-  processed = processed.replace(/\bKAPITAL\b/g, 'kapital');
-
-  // 2. Tangani pola URL: WWW.MIAOMI.COM → "www dot miaomi dot com"
-  //    Cocok untuk: huruf kapital berulang dipisah titik, minimal 2 bagian
-  processed = processed.replace(/\b([A-Z]{2,})(\.[A-Z]{2,})+\b/g, (match) => {
-    return match.toLowerCase().replace(/\./g, ' dot ');
-  });
-
-  // 3. Tangani kata yang SELURUHNYA huruf kapital (minimal 2 huruf) → ubah jadi lowercase
-  //    Jangan sentuh jika hanya 1 huruf (biarkan TTS mengeja, misal: "A", "B")
-  processed = processed.replace(/\b([A-Z]{2,})\b/g, (match) => {
-    if (match === 'KAPITAL') return 'kapital'; // jaga-jaga
-    return match.toLowerCase();
-  });
-
-  // 4. Bersihkan spasi berlebih
-  processed = processed.replace(/\s+/g, ' ').trim();
-
-  return processed;
-};
-
-// ─── KOMPONEN UTAMA ────────────────────────────────────────────────────────────
-
 export default function ComicReaderScreen() {
   const webViewRef = useRef<WebView>(null);
   const insets = useSafeAreaInsets();
@@ -61,7 +30,7 @@ export default function ComicReaderScreen() {
     currentText,
     extractedTexts,
     currentIndex,
-    startReading,   // Asumsi: ini fungsi yang menerima teks dan membacakannya
+    startReading,
     pauseReading,
     nextPanel,
     extractTextFromImage,
@@ -76,16 +45,6 @@ export default function ComicReaderScreen() {
       paddingTop: insets.top,
     },
   }), [insets.top]);
-
-  // ─── MODIFIKASI: BUNGKUS START READING DENGAN FORMAT TEXT ───────────────────
-
-  const handleStartReading = () => {
-    if (!currentText) return;
-    const formattedText = formatTextForSpeech(currentText);
-    startReading(formattedText); // Kirim teks yang sudah diformat ke TTS
-  };
-
-  // ─── HANDLER LAINNYA ────────────────────────────────────────────────────────
 
   const handleCapturePanel = async () => {
     try {
@@ -149,8 +108,6 @@ export default function ComicReaderScreen() {
     }
   };
 
-  // ─── RENDER ─────────────────────────────────────────────────────────────────
-
   return (
     <View style={dynamicStyles.containerWithInsets}>
       <StatusBar style={'light' as const} />
@@ -204,7 +161,7 @@ export default function ComicReaderScreen() {
 
             <TouchableOpacity
               style={[styles.controlButton, styles.playButton]}
-              onPress={isReading ? pauseReading : handleStartReading} // gunakan fungsi baru
+              onPress={isReading ? pauseReading : startReading}
               disabled={!currentText}
             >
               {isReading ? (
@@ -235,8 +192,6 @@ export default function ComicReaderScreen() {
     </View>
   );
 }
-
-// ─── STYLES ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
